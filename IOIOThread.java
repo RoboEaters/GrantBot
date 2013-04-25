@@ -15,19 +15,19 @@ public class IOIOThread extends BaseIOIOLooper
 		private PwmOutput pwmOutputy;
 		private PwmOutput motorOutput;
 		private PwmOutput wheelOutput;
-		private static RoboEaterMain the_gui;
+		private static GrantBotMain the_gui;
 		private static ActionSelector actions;
 		
 		double[] PWs = new double[4];
 		
 		//IRs
-		private AnalogInput IRFront, IRLeft, IRRight, IRRSide, IRLSide; //, IRBack;
+		private AnalogInput IRFront, IRLeft, IRRight, IRRSide, IRLSide, IRBack;
 		
 		private DigitalInput hallEffectSensor;
 		private int lastMotorPW;
 
 		//passes in a reference to sample2view FROM sample2nativecamera. bad programming?
-		public IOIOThread(RoboEaterMain ui)
+		public IOIOThread(GrantBotMain ui)
 		{
 			the_gui = ui;
 			
@@ -117,7 +117,7 @@ public class IOIOThread extends BaseIOIOLooper
 			//8:Side Right IR
 			//9:Back IR
 			//10:Halifact Sensor
-			double[] values = new double[10];	// why a new one instead of declaring elsewhere? - grant
+			double[] values = new double[10];
 			values[0] = 0;
 			values[1] = 0;
 			values[2] = motorPW;
@@ -129,9 +129,9 @@ public class IOIOThread extends BaseIOIOLooper
 			values[8] = IRRSide.getVoltage();
 			values[9] = 0;
 			
-			Boolean halifact = false;		// same question as above
+			Boolean halleffect = false;
 //
-			halifact = hallEffectSensor.read();
+			halleffect = hallEffectSensor.read();
 
 //
 //			if(halleffectVolt > 0.35)
@@ -139,7 +139,7 @@ public class IOIOThread extends BaseIOIOLooper
 
 			//Need to post PW and IR readings back to the GUI Here!!
 
-			the_gui.setTextFields(values, halifact, actions.getCurrentState());
+			the_gui.setTextFields(values, halleffect, ActionSelector.currentRole);
 			
 			//determines how fast calculations are done
 			Thread.sleep(50);

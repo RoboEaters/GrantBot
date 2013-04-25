@@ -19,7 +19,7 @@ public class ActionSelector {
 	public static final String RIGHTFLANK = "RIGHTFLANK";
 	public static final String CABOOSE = "CABOOSE";
 	public static final String STEERTEST = "STEERTEST";
-	private static String currentRole;
+	public static String currentRole;
 	private int botID;
 
 	// state neurons
@@ -110,14 +110,17 @@ public class ActionSelector {
 	ServoCalculations servos;
 
 	public ActionSelector() {
+		servos = new ServoCalculations();
 		currentState = STATE_WALL_FOLLOW;
 		previousState = currentState;
 		currentRole = HEAD;
 		IRChanges = new ArrayList<Double>(5);
-		event = new boolean[] {false, false, false};
+		event = new boolean[3];
+		roomba_net_init();
 	}
 
 	public ActionSelector(int ID, String startRole) {
+		servos = new ServoCalculations();
 		botID = ID;
 		currentRole = startRole;
 
@@ -130,7 +133,8 @@ public class ActionSelector {
 
 		previousState = currentState;
 		IRChanges = new ArrayList<Double>(5);
-		event = new boolean[] {false, false, false};
+		event = new boolean[3];
+		roomba_net_init();
 	}
 
 
@@ -152,7 +156,7 @@ public class ActionSelector {
 			}
 			else {
 				servos.steerOpen();
-				servos.setThrottle(100);
+				servos.setThrottle(50);
 				maneuverState = false;	
 				isReversing = false;
 			}
@@ -204,7 +208,7 @@ public class ActionSelector {
 			maneuverState = true;
 		}
 		else	
-			servos.setThrottle(100);
+			servos.setThrottle(50);
 	}
 
 
@@ -214,7 +218,7 @@ public class ActionSelector {
 			maneuverState = true;
 		}
 		else
-			servos.setThrottle(100);
+			servos.setThrottle(50);
 	}
 
 	public String getCurrentState() {
@@ -243,16 +247,20 @@ public class ActionSelector {
 	public void roomba_net_init () {
 		// initial values of neurons
 		event = new boolean[] {false,false,false};
-		n = new double[] {0,0,0};		// change to represent # of states
-		nm = new double[] {0,0};
-		achne = new double[] {1,1,1};	// see above	
+		n = new double[E];		// change to represent # of states
+		nm = new double[NM];
+		achne = new double[E];	// see above	
 
 		// state neuron intrinsic connectivity
 		w_n_n_exc = new double[N][N];
 		w_n_n_inh = new double[N][N];
 
-		Arrays.fill(w_n_n_exc, 0.5);
-		Arrays.fill(w_n_n_inh, -1.0);
+		for(int i = 0; i <N; i++) {
+			for(int j = 0; j < N; j++){
+		w_n_n_exc[i][j] = 0.5;
+		w_n_n_inh[i][j] = -1.0;
+			}
+		}
 
 		// can't excite or inhibit themselves
 		for (int i = 0; i<N; i++) {
@@ -262,23 +270,39 @@ public class ActionSelector {
 
 		// neuromodulator to state neuron activity
 		w_nm_n = new double[NM][N];
-		Arrays.fill(w_nm_n, 0);
+		for(int i = 0; i < NM; i++) {
+			for(int j = 0; j < N; j++) {
+				w_nm_n[i][j] = 0;
+			}
+		}
 		w_nm_n[NM_5HT][STATE_WALL_FOLLOW] = 5;
 		w_nm_n[NM_DA][STATE_EXPLORE_OBJECT] = 5;
 		w_nm_n[NM_DA][STATE_OPEN_FIELD] = 5;
 
 		// event neuron to state neuron activity
-		Arrays.fill(w_e_n, 1);
+		w_e_n = new double[E][N];
+		for (int i = 0; i < E; i++) {
+			for (int j = 0; j < N; j++) {
+				w_e_n[i][j] = 1;
+			}
+		}
 
+		w_e_nm = new double[E][NM];
 		// event neuron to state neuron connectivity
-		Arrays.fill(w_e_nm, 0);
+		for (int i = 0; i < E; i++) {
+			for (int j = 0; j < NM; j++) {
+				w_e_nm[i][j] = 0;
+			}
+		}
 		w_e_nm[EVENT_IR][NM_DA] = 1;
 		w_e_nm[EVENT_SIDE_IR][NM_DA] = 1;
 		w_e_nm[EVENT_BUMP][NM_5HT] = 1; // risk averse behavior (runs away from bumps)
 		// w_e_nm[EVENT_BUMP][NM_DA] = 1;  // risk taking behavior (runs towards bumps)
 
+		w_e_achne = new double[E];
 		// event neuron to neuromodulator connectivity
-		Arrays.fill(w_e_achne, 1);
+		for(int i = 0; i< E; i++)
+		w_e_achne[i] = 1;
 	}
 
 
@@ -292,7 +316,8 @@ public class ActionSelector {
 
 		// calculate cholinergic/noradrenergic neural activity
 		for (int i = 0; i<E; i++)	// for each event neuron
-			achne[i] = activity(ACHNE_ACT_BASECURRENT + (ACHNE_ACT_PERSIST * achneprev[i]) + (event[i]? w_e_achne[i] : 0), ACHNE_ACT_GAIN); 
+			achne[i] = activity(ACHNE_ACT_BASECURRENT + (ACHNE_ACT_PERSIST * achneprev[i]) + (event[i]? w_e_achne[i] : 0), ACHNE_ACT_GAIN);
+		
 
 		for (int i = 0; i < NM; i++) {	// for each neuromodulator
 			I = NM_ACT_BASECURRENT + (NM_ACT_PERSIST * nmprev[i]);
@@ -304,10 +329,10 @@ public class ActionSelector {
 
 		// calculate state neural activity
 		for (int i = 0; i < N; i++) {	// for each state neuron
-			I = N_ACT_BASECURRENT + (0.5*rand.nextDouble()) + (N_ACT_PERSIST * nprev[i]);	// straightforward 
-
+			I = N_ACT_BASECURRENT + (0.5) + (N_ACT_PERSIST * nprev[i]);	// straightforward 
+			//(0.5*(double)rand.nextDouble())
 			// intrinsic synaptic input // still in above for each state neuron loop
-			for (int j = 0; i < N; j++) {		// (for each state)
+			for (int j = 0; j < NM; j++) {		// (for each state)
 				I = I + (nprev[j] * w_n_n_exc[j][i] + (((nm[0]+nm[1]) * nprev[j] * w_n_n_inh[j][i]))); // uses sum total of both neuromodulators  
 			}
 

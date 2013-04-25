@@ -75,7 +75,7 @@ class ServoCalculations {
 	public ServoCalculations() {
 		//irc = new IRCalculations();
 		IRVoltages = new ArrayList<Double>(IRCount);
-		prevIRVoltages = IRVoltages;
+		prevIRVoltages = new ArrayList<Double>(IRCount);
 		IRChanges = new ArrayList<Double>(IRCount);
 		motorPW = MOTORSTOP;
 		wheelPW = MIDWHEEL;
@@ -160,7 +160,8 @@ class ServoCalculations {
 		//IRVoltages.set(IRFRONT, IRVoltages.get(IRFRONT) * 3);
 		//IRVoltages.set(IRRIGHTDIAGONAL , IRVoltages.get(IRRIGHTDIAGONAL) * 1.5);
 		//IRVoltages.set(IRRIGHTSIDE, IRVoltages.get(IRRIGHTSIDE) * 0.5);
-
+		System.out.print("size of navArray: " + navArray.length);
+		System.out.print("IRVoltages.indexOf(Collections.min(IRVoltages): " + IRVoltages.indexOf(Collections.min(IRVoltages)));
 		setWheelPW(navArray[IRVoltages.indexOf(Collections.min(IRVoltages))]); // turn towards most openest space
 		return true;
 	}
@@ -178,12 +179,14 @@ class ServoCalculations {
 	public void setVoltage(double IRFront, double IRLeft, double IRRight,
 			double IRLSide, double IRRSide) {
 
+		
 		prevIRVoltages = IRVoltages;
-		IRVoltages.set(IRLEFTSIDE, IRLSide);
-		IRVoltages.set(IRLEFTDIAGONAL, IRLeft);
-		IRVoltages.set(IRFRONT, IRFront);
-		IRVoltages.set(IRRIGHTDIAGONAL, IRRight);
-		IRVoltages.set(IRRIGHTSIDE, IRRSide);
+		IRVoltages = new ArrayList<Double>();
+		IRVoltages.add(IRLEFTSIDE, IRLSide);
+		IRVoltages.add(IRLEFTDIAGONAL, IRLeft);
+		IRVoltages.add(IRFRONT, IRFront);
+		IRVoltages.add(IRRIGHTDIAGONAL, IRRight);
+		IRVoltages.add(IRRIGHTSIDE, IRRSide);
 
 		Log.d("setVoltage", "The front IR voltage is " + IRFront);
 	}
@@ -195,8 +198,9 @@ class ServoCalculations {
 
 
 	public ArrayList<Double> getChange() {
-		for (int i=0 ; i<5; i++)
-			IRChanges.set(i, IRVoltages.get(i) - prevIRVoltages.get(i));
+		IRChanges = new ArrayList<Double>(5);
+		for (int i=0 ; i<5; i++)			
+			IRChanges.add(i, IRVoltages.get(i) - prevIRVoltages.get(i));
 		return IRChanges;
 	}
 
