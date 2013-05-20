@@ -1,35 +1,37 @@
-package com.cargocult.grantbot;
-
-import java.text.DecimalFormat;
+package com.roboeaters.grant_car;
 
 import ioio.lib.util.IOIOLooper;
 import ioio.lib.util.IOIOLooperProvider;
 import ioio.lib.util.android.IOIOAndroidApplicationHelper;
+
+import java.text.DecimalFormat;
+
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
+import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.hardware.Sensor;
+import android.hardware.SensorManager;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
-import android.speech.tts.TextToSpeech;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
-import android.widget.FrameLayout;
+import android.view.SurfaceView;
 import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class RoboEaterMain extends Activity implements IOIOLooperProvider {
+
+public class GrantCarMain extends Activity implements IOIOLooperProvider {
 	private static final String TAG = "Sample::Activity";
 
 	private final IOIOAndroidApplicationHelper helper_ = new IOIOAndroidApplicationHelper(
 			this, this);
 
-	RoboEaterMain app;
+	GrantCarMain app;
 
 	// UI stuff
 	TextView mountX, mountY, motorPW, wheelPW, frontIR, backIR, sideRIR,
@@ -45,7 +47,13 @@ public class RoboEaterMain extends Activity implements IOIOLooperProvider {
 
 	// Threadings
 	IOIOThread ioio_thread;
+	ROSBridge ros_thread;
+	Cam_thread cam_thread;
+	SurfaceView view;	// needed?
 
+	byte[] ip_address;
+	String portNumber;
+	
 	DecimalFormat df = new DecimalFormat("#.####"); // format to print voltages
 
 	// BLUETOOTH
@@ -72,11 +80,12 @@ public class RoboEaterMain extends Activity implements IOIOLooperProvider {
 	// ex (scale) * 3 == "3dp"
 	private float scale;
 
-	public RoboEaterMain() {
+	public GrantCarMain() {
 		Log.i(TAG, "Instantiated new " + this.getClass());
 	}
 
 	/** Called when the activity is first created. */
+	@TargetApi(5)
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -98,7 +107,16 @@ public class RoboEaterMain extends Activity implements IOIOLooperProvider {
 		}
 		// ensureDiscoverable(); // makes the device discoverable
 		menuSelection = 0; // set the inital selection
+		
+		ip_address = new byte[]{10,42,0,1};
+		portNumber = "9090";	// default ROSBridge
+		
+		view = new SurfaceView(this);
+		ros_thread = new ROSBridge(ip_address, portNumber);
+		cam_thread = new Cam_thread(view, ros_thread, "eater_input");
+		cam_thread.start_thread();
 	}
+		
 
 	// 0:MountX
 	// 1:MountY
@@ -252,7 +270,7 @@ public class RoboEaterMain extends Activity implements IOIOLooperProvider {
 		// thread can post the results
 		// of the IR and PW calculations to the textViews in the main
 		// applications UI
-		ioio_thread = new IOIOThread(app);
+		ioio_thread = new IOIOThread(app, ros_thread);
 		Log.d("YOLO TEST", "YOLO TEST");
 		return ioio_thread;// send them the viewscreen thread
 	}
@@ -279,13 +297,16 @@ public class RoboEaterMain extends Activity implements IOIOLooperProvider {
 	@Override
 	protected void onStop() {
 		helper_.stop();
+		ros_thread.end();
+		cam_thread.stop_thread();
 		super.onStop();
 	}
 
 	@Override
 	protected void onDestroy() {
+		ros_thread.end();
+		cam_thread.stop_thread();
 		helper_.destroy();
-
 		super.onDestroy();
 	}
 
@@ -294,7 +315,6 @@ public class RoboEaterMain extends Activity implements IOIOLooperProvider {
 		super.onStart();
 		if (true)
 			Log.e(TAG, "++ ON START ++");
-
 		helper_.start();
 	}
 
