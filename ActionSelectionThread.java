@@ -1,4 +1,4 @@
-package com.roboeaters.grant_car;
+package com.roboeaters.grantbot;
 
 // to do:
 // - add logging

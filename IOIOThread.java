@@ -1,4 +1,4 @@
-package com.roboeaters.grant_car;
+package com.roboeaters.grantbot;
 
 // mashup of some iteration of kevinbot and LeCarlDrive
 
@@ -27,11 +27,10 @@ public class IOIOThread extends BaseIOIOLooper
 	float prevSpeed;
 	float[] cmdPwm;
 	float[] cmdPwmPrev;
-
+	
 	//	ROSBridge tests:
-	boolean advertised;
-	boolean published;
-	boolean unadvertised;
+	boolean isAdvertised;
+	boolean isSubscribed;
 
 	private PwmOutput motorOutput;
 	private PwmOutput wheelOutput;
@@ -82,11 +81,10 @@ public class IOIOThread extends BaseIOIOLooper
 			motorOutput.setPulseWidth(ServoCalculations.ACTUALSTOP);
 			wheelOutput.setPulseWidth(ServoCalculations.MIDWHEEL);
 			servos.setVoltage(IRFront.getVoltage(), IRLeft.getVoltage(), IRRight.getVoltage(), IRRSide.getVoltage(), IRLSide.getVoltage());
-
+			
 			// ROSBridge
-			advertised = false;
-			published = false;
-			unadvertised = false;
+			isAdvertised = false;
+			isSubscribed = false;
 
 		}
 		catch (Exception e) 
@@ -101,6 +99,11 @@ public class IOIOThread extends BaseIOIOLooper
 
 	public void loop() throws ConnectionLostException, InterruptedException
 	{	
+
+		if(!isSubscribed)
+			isSubscribed = ros_thread.subscribeToTopic("eater_control", "std_msgs/String");
+
+
 		currentState = actions.getCurrentState();
 		//we can calculate the PW values right here in the IOIO loop
 		//INSTEAD OF from the controller class
@@ -114,6 +117,12 @@ public class IOIOThread extends BaseIOIOLooper
 			cmdPwm[VELO] = ServoCalculations.BACKMOTOR;
 		if (cmdPwm[VELO] < ServoCalculations.FORWARDMOTOR)
 			cmdPwm[VELO] = ServoCalculations.FORWARDMOTOR;
+
+		// FOR HERE FOR NOW
+		if (!ros_thread.isActivated) {
+			cmdPwm[VELO] = ServoCalculations.ACTUALSTOP;
+			cmdPwm[TURN] = ServoCalculations.MIDWHEEL;
+		}
 
 		try {
 			motorOutput.setPulseWidth((int) cmdPwm[VELO]);
@@ -134,19 +143,6 @@ public class IOIOThread extends BaseIOIOLooper
 				e1.printStackTrace();
 			}
 		} 
-
-
-		// ROSBridge test:
-		// --------------------------------------------------------------
-		if (!advertised)
-			advertised = ros_thread.advertiseToTopic("eater_input");
-
-		//if (advertised)
-		//	published = ros_thread.publishToTopic("eater_input", "YOLO");
-
-		//if (published && !unadvertised)
-		//	unadvertised = ros_thread.unadvertiseFromTopic("eater_input");
-		// ---------------------------------------------------------------
 
 
 		//values represent all of the newly calculated values done by the ServoCalculation class.
@@ -179,10 +175,10 @@ public class IOIOThread extends BaseIOIOLooper
 		//
 		//hallEffect = hallEffectSensor.read();
 
-		//Need to post PW and IR readings back to the GUI Here!!
-
+		// (send values to ROS)
+		
 		the_gui.setTextFields(values, hallEffect, currentState);
-
+		
 		//determines how fast calculations are done
 		Thread.sleep(100);
 

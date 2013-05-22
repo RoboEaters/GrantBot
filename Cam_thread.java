@@ -1,6 +1,10 @@
-package com.roboeaters.grant_car;
+package com.roboeaters.grantbot;
 
 import java.io.ByteArrayOutputStream;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import android.graphics.ImageFormat;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
@@ -19,20 +23,22 @@ public class Cam_thread
 	ROSBridge ros_thread;
 	SurfaceView parent_context;
 
-	String encoded_string;
-	String topic;
+	private String encoded_string;
+	private static final String topic = "eater_input";
+
+	private JSONObject imageJSON;
 
 	int width_ima, height_ima;
 	private static final String TAG = "cam_thread";
-	
+
 	private boolean STOP_THREAD;
 	private boolean IS_ADVERTISED;
 
-	
-	public Cam_thread(SurfaceView context, ROSBridge r_t, String t) {
+
+	public Cam_thread(SurfaceView context, ROSBridge r_t) {
 		parent_context = context;	
 		ros_thread = r_t;
-		topic = t;
+		imageJSON = new JSONObject();
 	}
 
 	private void init() {
@@ -52,11 +58,11 @@ public class Cam_thread
 			Log.e(TAG, "Error: ", exception);
 		}
 	}
-	
+
 	public void start_thread() {
 		init();
 	}
-	
+
 	public void stop_thread() {
 		STOP_THREAD = true;
 	}
@@ -81,15 +87,21 @@ public class Cam_thread
 			Rect rect = new Rect(0, 0, width, height);
 			YuvImage yuvimage = new YuvImage(data, ImageFormat.NV21, width, height, null);
 			yuvimage.compressToJpeg(rect, 80, outstr); 
-			
+
 			// what else (if anything) is needed here?
-			
+
 			String encoded_string = Base64.encodeToString(data,Base64.DEFAULT);
-			
+
+			try {
+				imageJSON.put("data", encoded_string);
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
+
 			if(!IS_ADVERTISED)
-				IS_ADVERTISED = ros_thread.advertiseToTopic(topic);
+				IS_ADVERTISED = ros_thread.advertiseToTopic(topic, "std_msgs/String");
 			if(IS_ADVERTISED)
-				ros_thread.publishToTopic(topic, encoded_string);
+				ros_thread.publishToTopic(topic, imageJSON);
 		}
 	}
 }

@@ -1,4 +1,4 @@
-package com.roboeaters.grant_car;
+package com.roboeaters.grantbot;
 
 import ioio.lib.util.IOIOLooper;
 import ioio.lib.util.IOIOLooperProvider;
@@ -113,8 +113,8 @@ public class GrantCarMain extends Activity implements IOIOLooperProvider {
 		
 		view = new SurfaceView(this);
 		ros_thread = new ROSBridge(ip_address, portNumber);
-		cam_thread = new Cam_thread(view, ros_thread, "eater_input");
-		cam_thread.start_thread();
+//		cam_thread = new Cam_thread(view, ros_thread);
+//		cam_thread.start_thread();
 	}
 		
 
@@ -252,7 +252,7 @@ public class GrantCarMain extends Activity implements IOIOLooperProvider {
 		sideLIR.setText("Side Left IR");
 		diagRIR.setText("Diag Right IR");
 		diagLIR.setText("Diag Left IR");
-		halifact.setText("Halifact Sensor");
+		halifact.setText("Hall Effect Sensor");
 		stateText.setText("State");
 
 		// frame.addView(viewScreen);
@@ -298,14 +298,14 @@ public class GrantCarMain extends Activity implements IOIOLooperProvider {
 	protected void onStop() {
 		helper_.stop();
 		ros_thread.end();
-		cam_thread.stop_thread();
+		//cam_thread.stop_thread();
 		super.onStop();
 	}
 
 	@Override
 	protected void onDestroy() {
 		ros_thread.end();
-		cam_thread.stop_thread();
+		//cam_thread.stop_thread();
 		helper_.destroy();
 		super.onDestroy();
 	}

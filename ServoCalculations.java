@@ -1,4 +1,4 @@
-package com.roboeaters.grant_car;
+package com.roboeaters.grantbot;
 
 // Add logging?
 
@@ -190,24 +190,24 @@ class ServoCalculations {
 		// values
 		// The X or cosine part of the popcode relates to the direction and
 		// magnitude of the turn
-		//		double x = irLeftVal * Math.cos(Math.PI * .75) + irFrontVal
-		//				* Math.cos(Math.PI * .5) + irRightVal * Math.cos(Math.PI * .25);
+				double x = irLeftVal * Math.cos(Math.PI * .75) + irFrontVal
+						* Math.cos(Math.PI * .5) + irRightVal * Math.cos(Math.PI * .25);
 
-		// modified to acknowledge side sensors, revert as necessary
-		double x = irLeftSide * Math.cos(Math.PI *1) + irLeftVal * Math.cos(Math.PI * .75) + irFrontVal
-				* Math.cos(Math.PI * .5) + irRightVal * Math.cos(Math.PI * .25) + irRightSide * (Math.PI * 0);
+		// modified to acknowledge side sensors
+//		double x = irLeftSide * Math.cos(Math.PI *1) + irLeftVal * Math.cos(Math.PI * .75) + irFrontVal
+//				* Math.cos(Math.PI * .5) + irRightVal * Math.cos(Math.PI * .25) + irRightSide * (Math.PI * 0);
 
 		// The Y or sine part of the popcode relates to the forward speed
 		// The side IRs are discounted so that the robot will not slow
 		// down as much when something is on its side.
-		//		double y = .5 * irLeftVal * Math.sin(Math.PI * .75) + irFrontVal
-		//				* Math.sin(Math.PI * .5) + .5 * irRightVal
-		//				* Math.sin(Math.PI * .25);
+				double y = .5 * irLeftVal * Math.sin(Math.PI * .75) + irFrontVal
+						* Math.sin(Math.PI * .5) + .5 * irRightVal
+						* Math.sin(Math.PI * .25);
 
 		// added side sensors
-		double y = .25 * irLeftSide * Math.sin(Math.PI * 1) + .5 * irLeftVal * Math.sin(Math.PI * .75) + irFrontVal
-				* Math.sin(Math.PI * .5) + .5 * irRightVal
-				* Math.sin(Math.PI * .25) + .25 * irRightSide * Math.sin(Math.PI * 0);
+//		double y = .25 * irLeftSide * Math.sin(Math.PI * 1) + .5 * irLeftVal * Math.sin(Math.PI * .75) + irFrontVal
+//				* Math.sin(Math.PI * .5) + .5 * irRightVal
+//				* Math.sin(Math.PI * .25) + .25 * irRightSide * Math.sin(Math.PI * 0);
 
 		cmdPwm[DIR] = 1;
 		cmdPwm[TURN] = (float) (MIDWHEEL + autoTurnScale * x);

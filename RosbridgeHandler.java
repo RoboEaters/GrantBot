@@ -1,4 +1,4 @@
-package com.roboeaters.grant_car;
+package com.roboeaters.grantbot;
 
 // tweak to suit rosbridge
 
@@ -8,11 +8,10 @@ import de.tavendo.autobahn.WebSocketConnectionHandler;
 public class RosbridgeHandler extends WebSocketConnectionHandler {
 
 	ROSBridge ros_thread;
-	private String TAG;
+	final static String TAG = "ROSBridgeHandler";
 
-	public RosbridgeHandler(ROSBridge r_t, String t) {
+	public RosbridgeHandler(ROSBridge r_t) {
 		ros_thread = r_t;
-		TAG = t;
 	}
 
 	/**
@@ -43,6 +42,7 @@ public class RosbridgeHandler extends WebSocketConnectionHandler {
 	 * @param payload    Text message payload or null (empty payload).
 	 */
 	public void onTextMessage(String payload) {
+		// receives JSONs in string form from ROS
 		Log.d(TAG, "onTextMessage: " + payload);
 	}
 
@@ -53,6 +53,7 @@ public class RosbridgeHandler extends WebSocketConnectionHandler {
 	 * @param payload    Text message payload as raw UTF-8 or null (empty payload).
 	 */
 	public void onRawTextMessage(byte[] payload) {
+		// unused
 		Log.d(TAG, "onRawTextMessage: " + payload.toString());
 	}
 
@@ -62,6 +63,7 @@ public class RosbridgeHandler extends WebSocketConnectionHandler {
 	 * @param payload    Binar message payload or null (empty payload).
 	 */
 	public void onBinaryMessage(byte[] payload) {
+		// unused
 		Log.d(TAG, "onBinaryMessage: " + payload.toString());
 	}
 
